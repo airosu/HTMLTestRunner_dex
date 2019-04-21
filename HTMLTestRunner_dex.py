@@ -65,14 +65,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # URL: http://tungwaiyip.info/software/HTMLTestRunner.html
 
 __author__ = "Wai Yip Tung"
-__version__ = "0.8.3"
+__version__ = "0.8.2"
 
 
 """
 Change History
-
-Version 0.8.3
-* Prevent crash on class or module-level exceptions (Darren Wurf).
 
 Version 0.8.2
 * Show output inline instead of popup window (Viorel Lupu).
@@ -94,12 +91,13 @@ Version in 0.7.1
 # TODO: simplify javascript using ,ore than 1 class in the class attribute?
 
 import datetime
-import StringIO
 import sys
 import time
 import unittest
 from xml.sax import saxutils
-
+from io import StringIO
+import random
+import os
 
 # ------------------------------------------------------------------------
 # The redirectors below are used to capture output during testing. Output
@@ -112,23 +110,15 @@ from xml.sax import saxutils
 #   >>> logging.basicConfig(stream=HTMLTestRunner.stdout_redirector)
 #   >>>
 
-def to_unicode(s):
-    try:
-        return unicode(s)
-    except UnicodeDecodeError:
-        # s is non ascii byte string
-        return s.decode('unicode_escape')
-
 class OutputRedirector(object):
     """ Wrapper to redirect stdout or stderr """
     def __init__(self, fp):
         self.fp = fp
 
     def write(self, s):
-        self.fp.write(to_unicode(s))
+        self.fp.write(s)
 
     def writelines(self, lines):
-        lines = map(to_unicode, lines)
         self.fp.writelines(lines)
 
     def flush(self):
@@ -203,7 +193,7 @@ class Template_mixin(object):
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     %(stylesheet)s
 </head>
-<body>
+<body onload='javascript:showCase(2)'>
 <script language="javascript" type="text/javascript"><!--
 output_list = Array();
 
@@ -317,14 +307,184 @@ function showOutput(id, name) {
 
     STYLESHEET_TMPL = """
 <style type="text/css" media="screen">
-body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; }
+body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; overflow-y: scroll;}
 table       { font-size: 100%; }
 pre         { }
 
 /* -- heading ---------------------------------------------------------------------- */
 h1 {
-	font-size: 16pt;
-	color: gray;
+    font-size: 16pt;
+    color: gray;
+}
+
+
+/* -- buttons ---------------------------------------------------------------------- */
+
+.btn {
+    text-decoration: none;
+    color: #fff;
+    background-color: #26a69a;
+    text-align: center;
+    letter-spacing: .5px;
+    -webkit-transition: background-color .2s ease-out;
+    transition: background-color .2s ease-out;
+    cursor: pointer;
+    font-size: 12px;
+    outline: 0;
+
+    -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+
+    border: none;
+    border-radius: 2px;
+    display: inline-block;
+    height: 20px;
+    line-height: 20px;
+    padding: 0 11px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn:hover {
+    background-color: #28afa1;
+    -webkit-box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+}
+.waves-effect {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    overflow: hidden;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    vertical-align: middle;
+    z-index: 1;
+    -webkit-transition: .3s ease-out;
+    transition: .3s ease-out;
+}
+.btn-errorCase {
+    text-decoration: none;
+    color: #fff;
+    background-color: #990000;
+    text-align: center;
+    letter-spacing: .5px;
+    -webkit-transition: background-color .2s ease-out;
+    transition: background-color .2s ease-out;
+    cursor: pointer;
+    font-size: 12px;
+    outline: 0;
+
+    -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+
+    border: none;
+    border-radius: 2px;
+    display: inline-block;
+    height: 20px;
+    line-height: 20px;
+    padding: 0 11px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-errorCase:hover {
+    background-color: #b30000;
+    -webkit-box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+}
+.btn-detail {
+    text-decoration: none;
+    color: #fff;
+    background-color: #008CBA;
+    text-align: center;
+    letter-spacing: .5px;
+    -webkit-transition: background-color .2s ease-out;
+    transition: background-color .2s ease-out;
+    cursor: pointer;
+    font-size: 12px;
+    outline: 0;
+
+    -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+
+    border: none;
+    border-radius: 2px;
+    display: inline-block;
+    height: 20px;
+    line-height: 20px;
+    padding: 0 11px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-detail:hover {
+    background-color: #0099cc;
+    -webkit-box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+}
+
+.btn-failCase {
+    text-decoration: none;
+    color: #fff;
+    background-color: #cc6600;
+    text-align: center;
+    letter-spacing: .5px;
+    -webkit-transition: background-color .2s ease-out;
+    transition: background-color .2s ease-out;
+    cursor: pointer;
+    font-size: 12px;
+    outline: 0;
+
+    -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+
+    border: none;
+    border-radius: 2px;
+    display: inline-block;
+    height: 20px;
+    line-height: 20px;
+    padding: 0 11px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-failCase:hover {
+    background-color: #e67300;
+    -webkit-box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+}
+.btn-none {
+    text-decoration: none;
+    color: #fff;
+    background-color: #26a69a;
+    text-align: center;
+    letter-spacing: .5px;
+    -webkit-transition: background-color .2s ease-out;
+    transition: background-color .2s ease-out;
+    cursor: pointer;
+    font-size: 12px;
+    outline: 0;
+
+    -webkit-box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.2);
+
+    border: none;
+    border-radius: 2px;
+    display: inline-block;
+    height: 20px;
+    line-height: 20px;
+    padding: 0 11px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-none:hover {
+    background-color: #28afa1;
+    -webkit-box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
+    box-shadow: 0 3px 3px 0 rgba(0,0,0,0.14), 0 1px 7px 0 rgba(0,0,0,0.12), 0 3px 1px -1px rgba(0,0,0,0.2);
 }
 .heading {
     margin-top: 0ex;
@@ -340,27 +500,27 @@ h1 {
     margin-top: 4ex;
     margin-bottom: 6ex;
 }
+.detail_view {
+    color: #0000cc;
+    text-decoration: none;
+}
+
 
 /* -- css div popup ------------------------------------------------------------------------ */
-a.popup_link {
-}
-
-a.popup_link:hover {
-    color: red;
-}
 
 .popup_window {
     display: none;
     position: relative;
     left: 0px;
     top: 0px;
+    margin-left: 2em;
     /*border: solid #627173 1px; */
-    padding: 10px;
-    background-color: #E6E6D6;
+    /*padding: 10px; */
+    // background-color: #e1eae5;
     font-family: "Lucida Console", "Courier New", Courier, monospace;
     text-align: left;
-    font-size: 8pt;
-    width: 500px;
+    font-size: 10pt;
+    /*width: 500px;*/
 }
 
 }
@@ -370,9 +530,11 @@ a.popup_link:hover {
     margin-bottom: 1ex;
 }
 #result_table {
-    width: 80%;
+    width: 90%;
     border-collapse: collapse;
     border: 1px solid #777;
+    cursor: default;
+    // background-color: #f5f5f5
 }
 #header_row {
     font-weight: bold;
@@ -381,18 +543,80 @@ a.popup_link:hover {
 }
 #result_table td {
     border: 1px solid #777;
-    padding: 2px;
+    padding: 3px;
+    vertical-align: text-top;
+}
+#header_row td:first-child {
+    width: 50%;
+}
+#header_row td + * {
+    width: 10%;
+}
+.passClass td:first-child {
+    width: 50%
+}
+.passClass td + * {
+    width: 10%
+}
+.errorClass td:first-child {
+    width: 50%
+}
+.errorClass td + * {
+    width: 10%
+}
+.failClass td:first-child {
+    width: 50%
+}
+.failClass td + * {
+    width: 10%
+}
+#total_row td:first-child {
+    width: 50%;
+}
+#total_row td + * {
+    width: 10%;
+}
+
+#result_table td[colspan] {
+    //width: 50%;
+}
+
+#result_table td pre {
+    display: initial;
+    white-space: pre-wrap;
+    width: auto;
+    overflow: auto;
 }
 #total_row  { font-weight: bold; }
-.passClass  { background-color: #6c6; }
-.failClass  { background-color: #c60; }
-.errorClass { background-color: #c00; }
+.passClass  { background-color: #abe3ab; }
+.passClass:hover {
+    // background-color: #9fdf9f;
+}
+.failClass  { background-color: #ffcc99; }
+.failClass:hover {
+    // background-color: #ffb366;
+}
+.errorClass { background-color: #fca6a9; }
+.errorClass:hover {
+    // background-color: #fc9294;
+}
 .passCase   { color: #6c6; }
+.passCase:hover {
+    // background-color: #f5f5f5;
+    cursor: default;
+}
 .failCase   { color: #c60; font-weight: bold; }
+.failCase:hover {
+    // background-color: #f5f5f5;
+}
 .errorCase  { color: #c00; font-weight: bold; }
+.errorCase:hover {
+    // background-color: #f5f5f5;
+}
 .hiddenRow  { display: none; }
-.testcase   { margin-left: 2em; }
-
+.testcase   { margin-left: 2em; padding: 0px; }
+.testcase:hover {
+}
 
 /* -- ending ---------------------------------------------------------------------- */
 #ending {
@@ -425,10 +649,10 @@ a.popup_link:hover {
     #
 
     REPORT_TMPL = """
-<p id='show_detail_line'>Show
-<a href='javascript:showCase(0)'>Summary</a>
-<a href='javascript:showCase(1)'>Failed</a>
-<a href='javascript:showCase(2)'>All</a>
+<p id='show_detail_line'><strong>Show: </strong>
+<a class="waves-effect btn-detail" href='javascript:showCase(0)'>Summary</a>
+<a class="waves-effect btn-detail" href='javascript:showCase(1)'>Failed</a>
+<a class="waves-effect btn-detail" href='javascript:showCase(2)'>All</a>
 </p>
 <table id='result_table'>
 <colgroup>
@@ -466,7 +690,7 @@ a.popup_link:hover {
     <td>%(Pass)s</td>
     <td>%(fail)s</td>
     <td>%(error)s</td>
-    <td><a href="javascript:showClassDetail('%(cid)s',%(count)s)">Detail</a></td>
+    <td style="text-align:center;"><a class='detail_view' href="javascript:showClassDetail('%(cid)s',%(count)s)">Detail</a></td>
 </tr>
 """ # variables: (style, desc, count, Pass, fail, error, cid)
 
@@ -477,14 +701,10 @@ a.popup_link:hover {
     <td colspan='5' align='center'>
 
     <!--css div popup start-->
-    <a class="popup_link" onfocus='this.blur();' href="javascript:showTestDetail('div_%(tid)s')" >
+    <a class="waves-effect btn-%(style)s" onfocus='this.blur();' href="javascript:showTestDetail('div_%(tid)s')" >
         %(status)s</a>
 
     <div id='div_%(tid)s' class="popup_window">
-        <div style='text-align: right; color:red;cursor:pointer'>
-        <a onfocus='this.blur();' onclick="document.getElementById('div_%(tid)s').style.display = 'none' " >
-           [x]</a>
-        </div>
         <pre>
         %(script)s
         </pre>
@@ -505,7 +725,7 @@ a.popup_link:hover {
 
 
     REPORT_TEST_OUTPUT_TMPL = r"""
-%(id)s: %(output)s
+%(output)s
 """ # variables: (id, output)
 
 
@@ -521,13 +741,13 @@ a.popup_link:hover {
 
 TestResult = unittest.TestResult
 
+
 class _TestResult(TestResult):
     # note: _TestResult is a pure representation of results.
     # It lacks the output and reporting ability compares to unittest._TextTestResult.
 
     def __init__(self, verbosity=1):
         TestResult.__init__(self)
-        self.outputBuffer = StringIO.StringIO()
         self.stdout0 = None
         self.stderr0 = None
         self.success_count = 0
@@ -544,10 +764,10 @@ class _TestResult(TestResult):
         # )
         self.result = []
 
-
     def startTest(self, test):
         TestResult.startTest(self, test)
         # just one buffer for both stdout and stderr
+        self.outputBuffer = StringIO()
         stdout_redirector.fp = self.outputBuffer
         stderr_redirector.fp = self.outputBuffer
         self.stdout0 = sys.stdout
@@ -618,9 +838,13 @@ class _TestResult(TestResult):
 class HTMLTestRunner(Template_mixin):
     """
     """
-    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None):
+    def __init__(self, report_file_name: str = None, output_path: str = None, stream=sys.stdout, verbosity=1, title=None, description=None):
         self.stream = stream
         self.verbosity = verbosity
+        self.report_file_name = '{}.html'.format(
+            report_file_name or 'test_{}_{}'.format(time.strftime('%Y-%m-%d__%H.%M.%S__'), "report"))
+        self.output_path = output_path or "reports"
+        # , random.randint(1, 999)
         if title is None:
             self.title = self.DEFAULT_TITLE
         else:
@@ -634,12 +858,13 @@ class HTMLTestRunner(Template_mixin):
 
 
     def run(self, test):
-        "Run the given test case or test suite."
+        " Run the given test case or test suite."
         result = _TestResult(self.verbosity)
         test(result)
         self.stopTime = datetime.datetime.now()
         self.generateReport(test, result)
-        print >>sys.stderr, '\nTime Elapsed: %s' % (self.stopTime-self.startTime)
+        # timelapse = self.stopTime-self.startTime
+        # print('Time Elapsed: ' + '%s:' % timelapse)
         return result
 
 
@@ -650,7 +875,7 @@ class HTMLTestRunner(Template_mixin):
         classes = []
         for n,t,o,e in result_list:
             cls = t.__class__
-            if not rmap.has_key(cls):
+            if cls not in rmap.keys():
                 rmap[cls] = []
                 classes.append(cls)
             rmap[cls].append((n,t,o,e))
@@ -679,7 +904,6 @@ class HTMLTestRunner(Template_mixin):
             ('Status', status),
         ]
 
-
     def generateReport(self, test, result):
         report_attrs = self.getReportAttributes(result)
         generator = 'HTMLTestRunner %s' % __version__
@@ -695,7 +919,15 @@ class HTMLTestRunner(Template_mixin):
             report = report,
             ending = ending,
         )
-        self.stream.write(output.encode('utf8'))
+        current_dir = os.getcwd()
+        dir_to = os.path.join(current_dir, self.output_path)
+        if not os.path.exists(dir_to):
+            os.makedirs(dir_to)
+        path_file = os.path.join(dir_to, self.report_file_name)
+        with open(path_file, 'w', encoding="utf8") as report_file:
+            report_file.write(output)
+
+        self.stream.write(output)
 
 
     def _generate_stylesheet(self):
@@ -724,18 +956,19 @@ class HTMLTestRunner(Template_mixin):
         for cid, (cls, cls_results) in enumerate(sortedResult):
             # subtotal for a class
             np = nf = ne = 0
-            for n,t,o,e in cls_results:
+            for n, t, o, e in cls_results:
                 if n == 0: np += 1
                 elif n == 1: nf += 1
                 else: ne += 1
 
             # format class description
+
             if cls.__module__ == "__main__":
                 name = cls.__name__
             else:
                 name = "%s.%s" % (cls.__module__, cls.__name__)
             doc = cls.__doc__ and cls.__doc__.split("\n")[0] or ""
-            desc = doc and '%s: %s' % (name, doc) or name
+            desc = doc and '%s' % (doc) or name
 
             row = self.REPORT_CLASS_TMPL % dict(
                 style = ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
@@ -767,20 +1000,20 @@ class HTMLTestRunner(Template_mixin):
         tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid+1,tid+1)
         name = t.id().split('.')[-1]
         doc = t.shortDescription() or ""
-        desc = doc and ('%s: %s' % (name, doc)) or name
+        desc = doc and ('%s' % (doc)) or name
         tmpl = has_output and self.REPORT_TEST_WITH_OUTPUT_TMPL or self.REPORT_TEST_NO_OUTPUT_TMPL
 
         # o and e should be byte string because they are collected from stdout and stderr?
-        if isinstance(o,str):
+        if isinstance(o, str):
             # TODO: some problem with 'string_escape': it escape \n and mess up formating
-            # uo = unicode(o.encode('string_escape'))
-            uo = o.decode('latin-1')
+            uo = o.encode('utf-8')
+            uo = uo.decode('utf-8')
         else:
             uo = o
-        if isinstance(e,str):
+        if isinstance(e, str):
             # TODO: some problem with 'string_escape': it escape \n and mess up formating
-            # ue = unicode(e.encode('string_escape'))
-            ue = e.decode('latin-1')
+            ue = e.encode('utf-8')
+            ue = ue.decode('utf-8')
         else:
             ue = e
 
