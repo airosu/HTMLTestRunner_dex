@@ -26,3 +26,29 @@ HTMLTestRunner is an extension to the Python standard library's unittest module.
 * Specified Report Output
   - A report will also be generated in the specified output .html file
   - When running the script, specify the output file using > in the terminal (e.g. "python my_suite.py > my_report.html")
+
+
+![Report Screenshot](/screenshot_01.png)
+
+
+## Installation
+
+Only a single file module HTMLTestRunner_dex.py is needed to generate your report. Either copy the file from this repository, or copy / paste the content in your own .py file
+
+## Usage
+
+```
+Runner must be configured in the main script file:
+--> runner = HTMLTestRunner_dex.HTMLTestRunner()
+
+When executed, the test or suite must be passed to the runner:
+--> runner.run(my_test_suite)
+
+A full example can be seen in "sample_test_report.py" file
+```
+
+## Running
+
+```
+python script.py > report.html
+```
